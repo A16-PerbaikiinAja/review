@@ -1,7 +1,7 @@
 package id.ac.ui.cs.advprog.review.model;
 
 import enums.Status;
-import id.ac.ui.cs.advprog.review.State.*;
+import id.ac.ui.cs.advprog.review.state.*;
 
 public class Review {
 

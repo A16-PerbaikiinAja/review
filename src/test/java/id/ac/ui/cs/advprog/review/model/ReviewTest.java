@@ -1,9 +1,9 @@
 package id.ac.ui.cs.advprog.review.model;
 
 import enums.Status;
-import id.ac.ui.cs.advprog.review.State.ApprovedState;
-import id.ac.ui.cs.advprog.review.State.PendingState;
-import id.ac.ui.cs.advprog.review.State.RejectedState;
+import id.ac.ui.cs.advprog.review.state.ApprovedState;
+import id.ac.ui.cs.advprog.review.state.PendingState;
+import id.ac.ui.cs.advprog.review.state.RejectedState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
