@@ -1,4 +1,4 @@
-package id.ac.ui.cs.advprog.review.State;
+package id.ac.ui.cs.advprog.review.state;
 
 import id.ac.ui.cs.advprog.review.model.Review;
 
@@ -10,7 +10,7 @@ public class RejectedState implements ReviewState {
 
     @Override
     public void reject(Review review) {
-        // Already rejected
+        // Already rejected, do nothing
     }
 
     @Override
