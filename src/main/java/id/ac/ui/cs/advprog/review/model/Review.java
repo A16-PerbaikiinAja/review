@@ -1,100 +1,110 @@
 package id.ac.ui.cs.advprog.review.model;
 
-import enums.Status;
-import id.ac.ui.cs.advprog.review.state.*;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class Review {
 
-    private String reviewId;
-    private int ratingScore;
-    private String review;
-    private String userId;
-    private String subscriptionBoxId;
+    private final UUID id;
+    private final UUID userId;
+    private final UUID technicianId;
+    private final String comment;
+    private final int rating;
+    private final LocalDateTime createdAt;
 
-    private Status reviewStatus;
-    private ReviewState state;
-
-    public Review(String reviewId, int ratingScore, String review, String userId, String subscriptionBoxId) {
-        this.reviewId = reviewId;
-        this.ratingScore = ratingScore;
-        this.review = review;
-        this.userId = userId;
-        this.subscriptionBoxId = subscriptionBoxId;
-
-        // Default initial state is Pending
-        this.state = new PendingState();
-        this.reviewStatus = Status.PENDING;
+    private Review(Builder builder) {
+        this.id = builder.id;
+        this.userId = builder.userId;
+        this.technicianId = builder.technicianId;
+        this.comment = builder.comment;
+        this.rating = builder.rating;
+        this.createdAt = builder.createdAt != null ? builder.createdAt : LocalDateTime.now();
     }
 
-    // State management
-    public void approve() {
-        state.approve(this);
+    public UUID getId() {
+        return id;
     }
 
-    public void reject() {
-        state.reject(this);
-    }
-
-    public String getStateString() {
-        return state.getState();
-    }
-
-    // Setters for state and status
-    public void setState(ReviewState state) {
-        this.state = state;
-    }
-
-    public void setReviewStatus(Status reviewStatus) {
-        this.reviewStatus = reviewStatus;
-    }
-
-    // Getters
-    public String getReviewId() {
-        return reviewId;
-    }
-
-    public int getRatingScore() {
-        return ratingScore;
-    }
-
-    public String getReview() {
-        return review;
-    }
-
-    public String getUserId() {
+    public UUID getUserId() {
         return userId;
     }
 
-    public String getSubscriptionBoxId() {
-        return subscriptionBoxId;
+    public UUID getTechnicianId() {
+        return technicianId;
     }
 
-    public Status getReviewStatus() {
-        return reviewStatus;
+    public String getComment() {
+        return comment;
     }
 
-    public ReviewState getState() {
-        return state;
+    public int getRating() {
+        return rating;
     }
 
-    // Setters
-    public void setReviewId(String reviewId) {
-        this.reviewId = reviewId;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setRatingScore(int ratingScore) {
-        this.ratingScore = ratingScore;
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public void setReview(String review) {
-        this.review = review;
-    }
+    public static class Builder {
+        private UUID id;
+        private UUID userId;
+        private UUID technicianId;
+        private String comment;
+        private int rating;
+        private LocalDateTime createdAt;
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
+        public Builder id(UUID id) {
+            this.id = id;
+            return this;
+        }
 
-    public void setSubscriptionBoxId(String subscriptionBoxId) {
-        this.subscriptionBoxId = subscriptionBoxId;
+        public Builder userId(UUID userId) {
+            this.userId = userId;
+            return this;
+        }
+
+        public Builder technicianId(UUID technicianId) {
+            this.technicianId = technicianId;
+            return this;
+        }
+
+        public Builder comment(String comment) {
+            this.comment = comment;
+            return this;
+        }
+
+        public Builder rating(int rating) {
+            this.rating = rating;
+            return this;
+        }
+
+        public Builder createdAt(LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Review build() {
+            if (id == null) {
+                throw new IllegalArgumentException("Review id is required");
+            }
+            if (userId == null) {
+                throw new IllegalArgumentException("User id is required");
+            }
+            if (technicianId == null) {
+                throw new IllegalArgumentException("Technician id is required");
+            }
+            if (comment == null || comment.trim().isEmpty()) {
+                throw new IllegalArgumentException("Comment is required");
+            }
+            if (rating < 1 || rating > 5) {
+                throw new IllegalArgumentException("Rating must be between 1 and 5");
+            }
+            return new Review(this);
+        }
     }
 }
+
