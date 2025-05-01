@@ -3,6 +3,7 @@ package id.ac.ui.cs.advprog.review.service;
 import id.ac.ui.cs.advprog.review.dto.ReviewDTO;
 import id.ac.ui.cs.advprog.review.model.Review;
 import id.ac.ui.cs.advprog.review.repository.ReviewRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,21 +14,91 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
 
-    public ReviewServiceImpl(ReviewRepository reviewRepository) {}
+    @Autowired
+    public ReviewServiceImpl(ReviewRepository reviewRepository) {
+        this.reviewRepository = reviewRepository;
+    }
 
-    public Review createReview(ReviewDTO reviewDTO) {}
+    @Override
+    public Review createReview(ReviewDTO reviewDTO) {
+        UUID reviewId = reviewDTO.getId() != null ? reviewDTO.getId() : UUID.randomUUID();
 
-    public Review getReviewById(UUID id) {}
+        Review newReview = Review.builder()
+                .id(reviewId)
+                .userId(reviewDTO.getUserId())
+                .technicianId(reviewDTO.getTechnicianId())
+                .comment(reviewDTO.getComment())
+                .rating(reviewDTO.getRating())
+                .build();
 
-    public List<Review> getAllReviews() {}
+        return reviewRepository.save(newReview);
+    }
 
-    public List<Review> getReviewsByTechnicianId(UUID technicianId) {}
+    @Override
+    public Review getReviewById(UUID id) {
+        return reviewRepository.findById(id);
+    }
 
-    public List<Review> getReviewsByUserId(UUID userId) {}
+    @Override
+    public List<Review> getAllReviews() {
+        return reviewRepository.findAll();
+    }
 
-    public Review updateReview(UUID id, ReviewDTO reviewDTO) {}
+    @Override
+    public List<Review> getReviewsByTechnicianId(UUID technicianId) {
+        return reviewRepository.findByTechnicianId(technicianId);
+    }
 
-    public boolean deleteReview(UUID id, UUID userId) {}
+    @Override
+    public List<Review> getReviewsByUserId(UUID userId) {
+        return reviewRepository.findByUserId(userId);
+    }
 
-    public boolean deleteReviewByAdmin(UUID id) {}
+    @Override
+    public Review updateReview(UUID id, ReviewDTO reviewDTO) {
+        Review existingReview = reviewRepository.findById(id);
+
+        if (existingReview == null) {
+            return null;
+        }
+
+        Review updatedReview = Review.builder()
+                .id(id)
+                .userId(existingReview.getUserId())
+                .technicianId(existingReview.getTechnicianId())
+                .comment(reviewDTO.getComment())
+                .rating(reviewDTO.getRating())
+                .build();
+
+        return reviewRepository.save(updatedReview);
+    }
+
+    @Override
+    public boolean deleteReview(UUID id, UUID userId) {
+        Review existingReview = reviewRepository.findById(id);
+
+        if (existingReview == null) {
+            return false;
+        }
+
+        // Check if the user is the owner of the review
+        if (!existingReview.getUserId().equals(userId)) {
+            return false;
+        }
+
+        reviewRepository.delete(id);
+        return true;
+    }
+
+    @Override
+    public boolean deleteReviewByAdmin(UUID id) {
+        Review existingReview = reviewRepository.findById(id);
+
+        if (existingReview == null) {
+            return false;
+        }
+
+        reviewRepository.delete(id);
+        return true;
+    }
 }
