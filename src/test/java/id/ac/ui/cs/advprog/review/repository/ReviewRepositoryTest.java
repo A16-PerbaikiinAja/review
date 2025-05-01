@@ -10,7 +10,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReviewRepositoryTest {
-    private id.ac.ui.cs.advprog.review.repository.ReviewRepository reviewRepository;
+    private ReviewRepository reviewRepository;
     private Review review1;
     private Review review2;
     private UUID reviewId1;
@@ -21,7 +21,7 @@ class ReviewRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        reviewRepository = new id.ac.ui.cs.advprog.review.repository.ReviewRepository();
+        reviewRepository = new ReviewRepository();
 
         reviewId1 = UUID.randomUUID();
         reviewId2 = UUID.randomUUID();
