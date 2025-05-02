@@ -49,6 +49,7 @@ public class Review {
         return new Builder();
     }
 
+    // Inner class Builder
     public static class Builder {
         private UUID id;
         private UUID userId;
