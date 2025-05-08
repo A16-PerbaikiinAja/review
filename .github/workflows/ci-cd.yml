@@ -6,7 +6,9 @@ on:
       - main
   pull_request:
 
-permissions: read-all
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   # Test Job
@@ -29,6 +31,8 @@ jobs:
 
       - name: Run unit tests
         run: ./gradlew test
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
   # PMD Analysis Job
   pmd:
@@ -60,13 +64,15 @@ jobs:
         with:
           sarif_file: pmd-report.sarif
 
-  # Build and Push to Docker Hub
-  build-and-push:
-    name: Build and Push Docker image
-    runs-on: ubuntu-latest
+  # Build and Deploy Job
+  build-and-deploy:
+    name: Build and Deploy
     needs: [test, pmd]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     steps:
-      - name: Check out the Git repository
+      - name: Check out code
         uses: actions/checkout@v4
 
       - name: Set up Java toolchain
@@ -76,61 +82,60 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      - name: Grant execute permission for gradlew
+      - name: Add gradlew permission
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build -x test
+        run: ./gradlew bootJar -x test
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
+          context: .
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
 
-  # Deploy
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: [build-and-push]
-    steps:
-      - name: Deploy Server
+      - name: Deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            # Clean up old docker images
+            # Stop and remove old containers
             docker stop web_server || true
             docker rm web_server || true
-            docker rmi $(docker images -a -q) || true
             
             # Login to Docker Hub
             docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-            
-            # Pull latest image
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
             
-            # Create .env file if it doesn't exist
-            if [ ! -f .env ]; then
-              cat <<EOF > .env
-              JWT_SECRET=${{ secrets.JWT_SECRET }}
-              DATABASE_URL=${{ secrets.DATABASE_URL }}
-              DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }}
-              DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-              EOF
-            fi
+            # Create environment file
+            cat > .env << EOF
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DATABASE_USERNAME=${{ secrets.DATABASE_USERNAME }}
+            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EOF
             
-            # Run the container with environment variables
+            chmod 600 .env
+            
+            # Run Spring Boot app container
             docker run -d \
               --name=web_server \
               -p 8080:8080 \
               --env-file .env \
+              --restart always \
               ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
+            
+            # Show running containers
+            docker ps
