@@ -11,6 +11,7 @@ permissions:
   security-events: write
 
 jobs:
+  # Test Job
   test:
     name: Run tests
     runs-on: ubuntu-22.04
@@ -25,7 +26,7 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      - name: Add gradlew permission
+      - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Run unit tests
@@ -103,7 +104,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO_NAME }}:latest
 
-      - name: Deploy to Production Server
+      - name: Deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
