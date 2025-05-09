@@ -4,18 +4,18 @@ import id.ac.ui.cs.advprog.review.dto.ReviewDTO;
 import id.ac.ui.cs.advprog.review.model.Review;
 import id.ac.ui.cs.advprog.review.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/reviews")
-@CrossOrigin(origins = "*")
+@RequestMapping("/review")
 public class ReviewController {
-
     private final ReviewService reviewService;
 
     @Autowired
@@ -23,73 +23,100 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
-    // 1. Pengguna dapat memberikan ulasan dan rating terhadap teknisi (C)
-    @PostMapping
-    public ResponseEntity<Review> createReview(@RequestBody ReviewDTO reviewDTO) {
-        Review createdReview = reviewService.createReview(reviewDTO);
-        return new ResponseEntity<>(createdReview, HttpStatus.CREATED);
+    private UUID extractUserId(Authentication auth) {
+        Object principal = auth.getPrincipal();
+        if (principal instanceof String) {
+            return UUID.fromString((String) principal);
+        } else if (principal instanceof User) {
+            return UUID.fromString(((User) principal).getUsername());
+        } else {
+            throw new IllegalStateException("Unexpected principal type: " + principal.getClass());
+        }
     }
 
-    // 2. Semua pengguna dapat melihat ulasan dan rating teknisi (R)
     @GetMapping
     public ResponseEntity<List<Review>> getAllReviews() {
         List<Review> reviews = reviewService.getAllReviews();
-        return new ResponseEntity<>(reviews, HttpStatus.OK);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Review> getReviewById(@PathVariable UUID id) {
-        Review review = reviewService.getReviewById(id);
-        if (review == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        return new ResponseEntity<>(review, HttpStatus.OK);
+        return ResponseEntity.ok(reviews);
     }
 
     @GetMapping("/technician/{technicianId}")
     public ResponseEntity<List<Review>> getReviewsByTechnicianId(@PathVariable UUID technicianId) {
         List<Review> reviews = reviewService.getReviewsByTechnicianId(technicianId);
-        return new ResponseEntity<>(reviews, HttpStatus.OK);
+        return ResponseEntity.ok(reviews);
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Review>> getReviewsByUserId(@PathVariable UUID userId) {
+    @GetMapping("/user")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<Review>> getUserReviews(Authentication auth) {
+        UUID userId = extractUserId(auth);
         List<Review> reviews = reviewService.getReviewsByUserId(userId);
-        return new ResponseEntity<>(reviews, HttpStatus.OK);
+        return ResponseEntity.ok(reviews);
     }
 
-    // 3. Pengguna dapat mengubah ulasan mereka jika ada perubahan ulasan (U)
-    @PutMapping("/{id}")
-    public ResponseEntity<Review> updateReview(
-            @PathVariable UUID id,
-            @RequestBody ReviewDTO reviewDTO) {
-        Review updatedReview = reviewService.updateReview(id, reviewDTO);
-        if (updatedReview == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    @GetMapping("/{reviewId}")
+    public ResponseEntity<Review> getReviewById(@PathVariable UUID reviewId) {
+        Review review = reviewService.getReviewById(reviewId);
+        if (review == null) {
+            return ResponseEntity.notFound().build();
         }
-        return new ResponseEntity<>(updatedReview, HttpStatus.OK);
+        return ResponseEntity.ok(review);
     }
 
-    // 4. Pengguna & Admin dapat menghapus ulasan yang sudah tidak relevan (D)
-    // Pengguna hanya dapat menghapus ulasan yang pernah mereka buat
-    @DeleteMapping("/{id}/user/{userId}")
-    public ResponseEntity<Void> deleteReview(
-            @PathVariable UUID id,
-            @PathVariable UUID userId) {
-        boolean deleted = reviewService.deleteReview(id, userId);
-        if (!deleted) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @PostMapping
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Review> createReview(@RequestBody ReviewDTO reviewDTO, Authentication auth) {
+        UUID userId = extractUserId(auth);
+        reviewDTO.setUserId(userId);
+
+        Review createdReview = reviewService.createReview(reviewDTO);
+        return ResponseEntity.ok(createdReview);
     }
 
-    // Admin dapat menghapus semua ulasan
-    @DeleteMapping("/admin/{id}")
-    public ResponseEntity<Void> deleteReviewByAdmin(@PathVariable UUID id) {
-        boolean deleted = reviewService.deleteReviewByAdmin(id);
-        if (!deleted) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    @PutMapping("/{reviewId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> updateReview(
+            @PathVariable UUID reviewId,
+            @RequestBody ReviewDTO reviewDTO,
+            Authentication auth) {
+
+        UUID userId = extractUserId(auth);
+        Review existingReview = reviewService.getReviewById(reviewId);
+
+        if (existingReview == null) {
+            return ResponseEntity.notFound().build();
         }
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+
+        if (!existingReview.getUserId().equals(userId)) {
+            return ResponseEntity.badRequest().body("Hanya bisa merubah review yang Anda buat sendiri!");
+        }
+
+        Review updatedReview = reviewService.updateReview(reviewId, reviewDTO);
+        return ResponseEntity.ok(updatedReview);
+    }
+
+    @DeleteMapping("/{reviewId}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> deleteReview(@PathVariable UUID reviewId, Authentication auth) {
+        UUID userId = extractUserId(auth);
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        boolean result;
+        try {
+            if (isAdmin) {
+                result = reviewService.deleteReviewByAdmin(reviewId);
+            } else {
+                result = reviewService.deleteReview(reviewId, userId);
+            }
+
+            if (result) {
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest().body("Review tidak ditemukan atau Anda tidak punya permission.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
