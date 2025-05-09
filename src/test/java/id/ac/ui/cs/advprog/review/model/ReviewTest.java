@@ -1,12 +1,15 @@
 package id.ac.ui.cs.advprog.review.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReviewTest {
     private UUID reviewId;
@@ -39,6 +42,28 @@ public class ReviewTest {
         assertEquals(comment, review.getComment());
         assertEquals(rating, review.getRating());
         assertNotNull(review.getCreatedAt());
+
+        // Verify JPA annotations
+        assertTrue(Review.class.isAnnotationPresent(Entity.class));
+        assertTrue(Review.class.isAnnotationPresent(Table.class));
+
+        try {
+            java.lang.reflect.Field idField = Review.class.getDeclaredField("id");
+            assertTrue(idField.isAnnotationPresent(Id.class));
+            assertTrue(idField.isAnnotationPresent(Column.class));
+        } catch (NoSuchFieldException e) {
+            fail("id field not found or not properly annotated");
+        }
+    }
+
+    @Test
+    void testDefaultConstructor() {
+        // Test default constructor for JPA
+        try {
+            Review.class.getDeclaredConstructor();
+        } catch (NoSuchMethodException e) {
+            fail("Default constructor not found. JPA requires default constructor.");
+        }
     }
 
     @Test

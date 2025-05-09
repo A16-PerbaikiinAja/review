@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,7 +44,7 @@ class ReviewServiceTest {
                 .id(reviewId)
                 .userId(userId)
                 .technicianId(technicianId)
-                .comment("Great service!")
+                .comment("Pengerjaannya sangat oke!")
                 .rating(5)
                 .build();
 
@@ -51,7 +52,7 @@ class ReviewServiceTest {
         testReviewDTO.setId(reviewId);
         testReviewDTO.setUserId(userId);
         testReviewDTO.setTechnicianId(technicianId);
-        testReviewDTO.setComment("Great service!");
+        testReviewDTO.setComment("Pengerjaannya sangat oke!");
         testReviewDTO.setRating(5);
     }
 
@@ -71,7 +72,7 @@ class ReviewServiceTest {
 
     @Test
     void testGetReviewById() {
-        when(reviewRepository.findById(reviewId)).thenReturn(testReview);
+        when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(testReview));
 
         Review result = reviewService.getReviewById(reviewId);
 
@@ -81,7 +82,7 @@ class ReviewServiceTest {
 
     @Test
     void testGetReviewByIdNotFound() {
-        when(reviewRepository.findById(reviewId)).thenReturn(null);
+        when(reviewRepository.findById(reviewId)).thenReturn(Optional.empty());
 
         Review result = reviewService.getReviewById(reviewId);
 
@@ -134,7 +135,7 @@ class ReviewServiceTest {
 
     @Test
     void testUpdateReview() {
-        when(reviewRepository.findById(reviewId)).thenReturn(testReview);
+        when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(testReview));
 
         ReviewDTO updatedDTO = new ReviewDTO();
         updatedDTO.setId(reviewId);
@@ -165,7 +166,7 @@ class ReviewServiceTest {
 
     @Test
     void testUpdateReviewNotFound() {
-        when(reviewRepository.findById(reviewId)).thenReturn(null);
+        when(reviewRepository.findById(reviewId)).thenReturn(Optional.empty());
 
         ReviewDTO updatedDTO = new ReviewDTO();
         updatedDTO.setComment("Updated comment");
@@ -181,48 +182,48 @@ class ReviewServiceTest {
 
     @Test
     void testDeleteReview() {
-        when(reviewRepository.findById(reviewId)).thenReturn(testReview);
+        when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(testReview));
 
         boolean result = reviewService.deleteReview(reviewId, userId);
 
         verify(reviewRepository).findById(reviewId);
-        verify(reviewRepository).delete(reviewId);
+        verify(reviewRepository).deleteById(reviewId);
 
         assertTrue(result);
     }
 
     @Test
     void testDeleteReviewByDifferentUser() {
-        when(reviewRepository.findById(reviewId)).thenReturn(testReview);
+        when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(testReview));
 
         boolean result = reviewService.deleteReview(reviewId, UUID.randomUUID());
 
         verify(reviewRepository).findById(reviewId);
-        verify(reviewRepository, never()).delete(any(UUID.class));
+        verify(reviewRepository, never()).deleteById(any(UUID.class));
 
         assertFalse(result);
     }
 
     @Test
     void testDeleteReviewByAdmin() {
-        when(reviewRepository.findById(reviewId)).thenReturn(testReview);
+        when(reviewRepository.existsById(reviewId)).thenReturn(true);
 
         boolean result = reviewService.deleteReviewByAdmin(reviewId);
 
-        verify(reviewRepository).findById(reviewId);
-        verify(reviewRepository).delete(reviewId);
+        verify(reviewRepository).existsById(reviewId);
+        verify(reviewRepository).deleteById(reviewId);
 
         assertTrue(result);
     }
 
     @Test
     void testDeleteReviewNotFound() {
-        when(reviewRepository.findById(reviewId)).thenReturn(null);
+        when(reviewRepository.findById(reviewId)).thenReturn(Optional.empty());
 
         boolean result = reviewService.deleteReview(reviewId, userId);
 
         verify(reviewRepository).findById(reviewId);
-        verify(reviewRepository, never()).delete(any(UUID.class));
+        verify(reviewRepository, never()).deleteById(any(UUID.class));
 
         assertFalse(result);
     }

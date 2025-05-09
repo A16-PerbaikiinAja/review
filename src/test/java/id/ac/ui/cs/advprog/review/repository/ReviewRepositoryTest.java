@@ -1,159 +1,246 @@
 package id.ac.ui.cs.advprog.review.repository;
 
 import id.ac.ui.cs.advprog.review.model.Review;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DataJpaTest
 class ReviewRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
     private ReviewRepository reviewRepository;
-    private Review review1;
-    private Review review2;
-    private UUID reviewId1;
-    private UUID reviewId2;
-    private UUID userId1;
-    private UUID userId2;
-    private UUID technicianId;
 
-    @BeforeEach
-    void setUp() {
-        reviewRepository = new ReviewRepository();
+    @Test
+    void testSaveAndFindById() {
+        // Create a review
+        UUID reviewId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID technicianId = UUID.randomUUID();
 
-        reviewId1 = UUID.randomUUID();
-        reviewId2 = UUID.randomUUID();
-        userId1 = UUID.randomUUID();
-        userId2 = UUID.randomUUID();
-        technicianId = UUID.randomUUID();
-
-        review1 = Review.builder()
-                .id(reviewId1)
-                .userId(userId1)
+        Review review = Review.builder()
+                .id(reviewId)
+                .userId(userId)
                 .technicianId(technicianId)
                 .comment("Pengerjaannya sangat oke!")
                 .rating(5)
                 .build();
 
-        review2 = Review.builder()
-                .id(reviewId2)
-                .userId(userId2)
+        // Save the review
+        entityManager.persist(review);
+        entityManager.flush();
+
+        // Find the review by ID
+        Optional<Review> found = reviewRepository.findById(reviewId);
+
+        // Assertions
+        assertTrue(found.isPresent());
+        assertEquals(reviewId, found.get().getId());
+        assertEquals(userId, found.get().getUserId());
+        assertEquals(technicianId, found.get().getTechnicianId());
+        assertEquals("Pengerjaannya sangat oke!", found.get().getComment());
+        assertEquals(5, found.get().getRating());
+    }
+
+    @Test
+    void testSaveAndUpdate() {
+        // Create a review
+        UUID reviewId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        UUID technicianId = UUID.randomUUID();
+
+        Review review = Review.builder()
+                .id(reviewId)
+                .userId(userId)
                 .technicianId(technicianId)
-                .comment("Bagus, tapi mungkin bisa lebih cepat lagi.")
+                .comment("Original comment")
                 .rating(4)
                 .build();
-    }
 
-    @Test
-    void testSaveCreate() {
-        Review savedReview = reviewRepository.save(review1);
+        // Save the review
+        entityManager.persist(review);
+        entityManager.flush();
 
-        assertEquals(review1.getId(), savedReview.getId());
-        assertEquals(review1.getUserId(), savedReview.getUserId());
-        assertEquals(review1.getTechnicianId(), savedReview.getTechnicianId());
-        assertEquals(review1.getComment(), savedReview.getComment());
-        assertEquals(review1.getRating(), savedReview.getRating());
-        assertEquals(review1.getCreatedAt(), savedReview.getCreatedAt());
-    }
-
-    @Test
-    void testSaveUpdate() {
-        reviewRepository.save(review1);
-
+        // Update the review
         Review updatedReview = Review.builder()
-                .id(reviewId1)
-                .userId(userId1)
+                .id(reviewId)
+                .userId(userId)
                 .technicianId(technicianId)
                 .comment("Updated comment")
                 .rating(3)
                 .build();
 
         Review result = reviewRepository.save(updatedReview);
+        entityManager.flush();
 
-        assertEquals(updatedReview.getId(), result.getId());
-        assertEquals(updatedReview.getUserId(), result.getUserId());
-        assertEquals(updatedReview.getTechnicianId(), result.getTechnicianId());
-        assertEquals("Updated comment", result.getComment());
-        assertEquals(3, result.getRating());
-    }
+        // Find the review again to check updates
+        Optional<Review> found = reviewRepository.findById(reviewId);
 
-    @Test
-    void testFindById() {
-        reviewRepository.save(review1);
-        reviewRepository.save(review2);
-
-        Review foundReview = reviewRepository.findById(reviewId1);
-
-        assertNotNull(foundReview);
-        assertEquals(review1.getId(), foundReview.getId());
-        assertEquals(review1.getComment(), foundReview.getComment());
-    }
-
-    @Test
-    void testFindByIdNotFound() {
-        reviewRepository.save(review1);
-
-        Review foundReview = reviewRepository.findById(UUID.randomUUID());
-
-        assertNull(foundReview);
+        // Assertions
+        assertTrue(found.isPresent());
+        assertEquals("Updated comment", found.get().getComment());
+        assertEquals(3, found.get().getRating());
     }
 
     @Test
     void testFindAll() {
-        reviewRepository.save(review1);
-        reviewRepository.save(review2);
+        // Create reviews
+        UUID technicianId = UUID.randomUUID();
 
+        Review review1 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(technicianId)
+                .comment("Comment 1")
+                .rating(5)
+                .build();
+
+        Review review2 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(technicianId)
+                .comment("Comment 2")
+                .rating(4)
+                .build();
+
+        // Save reviews
+        entityManager.persist(review1);
+        entityManager.persist(review2);
+        entityManager.flush();
+
+        // Find all reviews
         List<Review> allReviews = reviewRepository.findAll();
 
-        assertEquals(2, allReviews.size());
-        assertTrue(allReviews.contains(review1));
-        assertTrue(allReviews.contains(review2));
+        // Assertions
+        assertTrue(allReviews.size() >= 2);
+        assertTrue(allReviews.stream().anyMatch(r -> r.getId().equals(review1.getId())));
+        assertTrue(allReviews.stream().anyMatch(r -> r.getId().equals(review2.getId())));
     }
 
     @Test
     void testFindByTechnicianId() {
-        reviewRepository.save(review1);
-        reviewRepository.save(review2);
+        UUID technicianId = UUID.randomUUID();
 
+        // Create two reviews for the same technician
+        Review review1 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(technicianId)
+                .comment("Technician review 1")
+                .rating(5)
+                .build();
+
+        Review review2 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(technicianId)
+                .comment("Technician review 2")
+                .rating(4)
+                .build();
+
+        // Create one review for a different technician
+        Review review3 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(UUID.randomUUID())
+                .comment("Different technician review")
+                .rating(3)
+                .build();
+
+        // Save all reviews
+        entityManager.persist(review1);
+        entityManager.persist(review2);
+        entityManager.persist(review3);
+        entityManager.flush();
+
+        // Find reviews by technician ID
         List<Review> technicianReviews = reviewRepository.findByTechnicianId(technicianId);
 
+        // Assertions
         assertEquals(2, technicianReviews.size());
-        assertTrue(technicianReviews.contains(review1));
-        assertTrue(technicianReviews.contains(review2));
+        assertTrue(technicianReviews.stream().anyMatch(r -> r.getId().equals(review1.getId())));
+        assertTrue(technicianReviews.stream().anyMatch(r -> r.getId().equals(review2.getId())));
     }
 
     @Test
     void testFindByUserId() {
-        reviewRepository.save(review1);
-        reviewRepository.save(review2);
+        UUID userId = UUID.randomUUID();
 
-        List<Review> userReviews = reviewRepository.findByUserId(userId1);
+        // Create two reviews by the same user
+        Review review1 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .technicianId(UUID.randomUUID())
+                .comment("User review 1")
+                .rating(5)
+                .build();
 
-        assertEquals(1, userReviews.size());
-        assertTrue(userReviews.contains(review1));
+        Review review2 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .technicianId(UUID.randomUUID())
+                .comment("User review 2")
+                .rating(4)
+                .build();
+
+        // Create one review by a different user
+        Review review3 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(UUID.randomUUID())
+                .comment("Different user review")
+                .rating(3)
+                .build();
+
+        // Save all reviews
+        entityManager.persist(review1);
+        entityManager.persist(review2);
+        entityManager.persist(review3);
+        entityManager.flush();
+
+        // Find reviews by user ID
+        List<Review> userReviews = reviewRepository.findByUserId(userId);
+
+        // Assertions
+        assertEquals(2, userReviews.size());
+        assertTrue(userReviews.stream().anyMatch(r -> r.getId().equals(review1.getId())));
+        assertTrue(userReviews.stream().anyMatch(r -> r.getId().equals(review2.getId())));
     }
 
     @Test
     void testDelete() {
-        reviewRepository.save(review1);
-        reviewRepository.save(review2);
+        UUID reviewId = UUID.randomUUID();
 
-        reviewRepository.delete(reviewId1);
+        Review review = Review.builder()
+                .id(reviewId)
+                .userId(UUID.randomUUID())
+                .technicianId(UUID.randomUUID())
+                .comment("Delete test")
+                .rating(5)
+                .build();
 
-        assertNull(reviewRepository.findById(reviewId1));
-        assertNotNull(reviewRepository.findById(reviewId2));
-    }
+        // Save the review
+        entityManager.persist(review);
+        entityManager.flush();
 
-    @Test
-    void testDeleteNotFound() {
-        reviewRepository.save(review1);
+        // Confirm review exists
+        assertTrue(reviewRepository.findById(reviewId).isPresent());
 
-        UUID randomId = UUID.randomUUID();
-        reviewRepository.delete(randomId);
+        // Delete the review
+        reviewRepository.deleteById(reviewId);
+        entityManager.flush();
 
-        assertNotNull(reviewRepository.findById(review1.getId()));
-        assertEquals(1, reviewRepository.findAll().size());
+        // Confirm review is deleted
+        assertFalse(reviewRepository.findById(reviewId).isPresent());
     }
 }
