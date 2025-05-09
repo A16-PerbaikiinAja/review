@@ -1,16 +1,35 @@
 package id.ac.ui.cs.advprog.review.model;
 
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Entity
+@Table(name = "reviews")
 public class Review {
 
-    private final UUID id;
-    private final UUID userId;
-    private final UUID technicianId;
-    private final String comment;
-    private final int rating;
-    private final LocalDateTime createdAt;
+    @Id
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
+
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
+    @Column(name = "technician_id", nullable = false)
+    private UUID technicianId;
+
+    @Column(name = "comment", nullable = false, columnDefinition = "TEXT")
+    private String comment;
+
+    @Column(name = "rating", nullable = false)
+    private int rating;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    // Default constructor untuk JPA
+    protected Review() {
+    }
 
     private Review(Builder builder) {
         this.id = builder.id;
@@ -108,4 +127,3 @@ public class Review {
         }
     }
 }
-
