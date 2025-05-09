@@ -31,8 +31,6 @@ jobs:
 
       - name: Run unit tests
         run: ./gradlew test
-        env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
   # PMD Analysis Job
   pmd:
