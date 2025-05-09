@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -36,7 +37,8 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Review getReviewById(UUID id) {
-        return reviewRepository.findById(id);
+        Optional<Review> review = reviewRepository.findById(id);
+        return review.orElse(null);
     }
 
     @Override
@@ -56,11 +58,13 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Review updateReview(UUID id, ReviewDTO reviewDTO) {
-        Review existingReview = reviewRepository.findById(id);
+        Optional<Review> existingReviewOpt = reviewRepository.findById(id);
 
-        if (existingReview == null) {
+        if (existingReviewOpt.isEmpty()) {
             return null;
         }
+
+        Review existingReview = existingReviewOpt.get();
 
         Review updatedReview = Review.builder()
                 .id(id)
@@ -75,30 +79,30 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public boolean deleteReview(UUID id, UUID userId) {
-        Review existingReview = reviewRepository.findById(id);
+        Optional<Review> existingReviewOpt = reviewRepository.findById(id);
 
-        if (existingReview == null) {
+        if (existingReviewOpt.isEmpty()) {
             return false;
         }
+
+        Review existingReview = existingReviewOpt.get();
 
         // Check if the user is the owner of the review
         if (!existingReview.getUserId().equals(userId)) {
             return false;
         }
 
-        reviewRepository.delete(id);
+        reviewRepository.deleteById(id);
         return true;
     }
 
     @Override
     public boolean deleteReviewByAdmin(UUID id) {
-        Review existingReview = reviewRepository.findById(id);
-
-        if (existingReview == null) {
+        if (!reviewRepository.existsById(id)) {
             return false;
         }
 
-        reviewRepository.delete(id);
+        reviewRepository.deleteById(id);
         return true;
     }
 }
