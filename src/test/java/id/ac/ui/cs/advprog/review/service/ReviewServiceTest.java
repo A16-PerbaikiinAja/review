@@ -3,12 +3,14 @@ package id.ac.ui.cs.advprog.review.service;
 import id.ac.ui.cs.advprog.review.dto.ReviewDTO;
 import id.ac.ui.cs.advprog.review.model.Review;
 import id.ac.ui.cs.advprog.review.repository.ReviewRepository;
+import id.ac.ui.cs.advprog.review.repository.TechnicianRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,9 @@ class ReviewServiceTest {
     @Mock
     private ReviewRepository reviewRepository;
 
+    @Mock
+    private TechnicianRepository technicianRepository;
+
     private ReviewService reviewService;
 
     private UUID reviewId;
@@ -31,14 +36,16 @@ class ReviewServiceTest {
     private UUID technicianId;
     private Review testReview;
     private ReviewDTO testReviewDTO;
+    private LocalDateTime testCreatedAt;
 
     @BeforeEach
     void setUp() {
-        reviewService = new ReviewServiceImpl(reviewRepository);
+        reviewService = new ReviewServiceImpl(reviewRepository, technicianRepository);
 
         reviewId = UUID.randomUUID();
         userId = UUID.randomUUID();
         technicianId = UUID.randomUUID();
+        testCreatedAt = LocalDateTime.now().minusDays(1);
 
         testReview = Review.builder()
                 .id(reviewId)
@@ -46,6 +53,7 @@ class ReviewServiceTest {
                 .technicianId(technicianId)
                 .comment("Pengerjaannya sangat oke!")
                 .rating(5)
+                .createdAt(testCreatedAt)
                 .build();
 
         testReviewDTO = new ReviewDTO();
@@ -144,15 +152,15 @@ class ReviewServiceTest {
         updatedDTO.setComment("Updated comment");
         updatedDTO.setRating(4);
 
-        Review updatedReview = Review.builder()
-                .id(reviewId)
-                .userId(userId)
-                .technicianId(technicianId)
-                .comment("Updated comment")
-                .rating(4)
-                .build();
-
-        when(reviewRepository.save(any(Review.class))).thenReturn(updatedReview);
+        when(reviewRepository.save(argThat(review ->
+                review.getId().equals(reviewId) &&
+                        review.getComment().equals("Updated comment") &&
+                        review.getRating() == 4 &&
+                        review.getCreatedAt().equals(testCreatedAt)
+        ))).thenAnswer(invocation -> {
+            Review updatedReview = invocation.getArgument(0);
+            return updatedReview;
+        });
 
         Review result = reviewService.updateReview(reviewId, updatedDTO);
 
@@ -162,6 +170,7 @@ class ReviewServiceTest {
         assertEquals(reviewId, result.getId());
         assertEquals("Updated comment", result.getComment());
         assertEquals(4, result.getRating());
+        assertEquals(testCreatedAt, result.getCreatedAt()); // Verify createdAt is preserved
     }
 
     @Test
