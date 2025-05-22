@@ -4,6 +4,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -20,8 +21,10 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import id.ac.ui.cs.advprog.review.dto.ReviewDTO;
+import id.ac.ui.cs.advprog.review.dto.ReviewResponseDTO;
 import id.ac.ui.cs.advprog.review.model.Review;
 import id.ac.ui.cs.advprog.review.security.JwtTokenProvider;
 import id.ac.ui.cs.advprog.review.service.ReviewService;
@@ -39,7 +42,6 @@ public class ReviewControllerTest {
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
     private ObjectMapper objectMapper;
 
     private UUID fixedUserId;
@@ -47,73 +49,93 @@ public class ReviewControllerTest {
     private UUID technicianId;
     private Review testReview;
     private ReviewDTO testReviewDTO;
+    private ReviewResponseDTO testReviewResponseDTO;
+    private LocalDateTime testCreatedAt;
 
     @BeforeEach
     void setUp() {
         fixedUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
         reviewId = UUID.randomUUID();
         technicianId = UUID.randomUUID();
+        testCreatedAt = LocalDateTime.now();
+
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
 
         testReview = Review.builder()
                 .id(reviewId)
                 .userId(fixedUserId)
                 .technicianId(technicianId)
-                .comment("Great service!")
+                .comment("Pengerjaannya sangat oke!")
                 .rating(5)
+                .createdAt(testCreatedAt)
                 .build();
 
         testReviewDTO = new ReviewDTO();
         testReviewDTO.setId(reviewId);
         testReviewDTO.setUserId(fixedUserId);
         testReviewDTO.setTechnicianId(technicianId);
-        testReviewDTO.setComment("Great service!");
+        testReviewDTO.setComment("Pengerjaannya sangat oke!");
         testReviewDTO.setRating(5);
+
+        testReviewResponseDTO = new ReviewResponseDTO();
+        testReviewResponseDTO.setId(reviewId);
+        testReviewResponseDTO.setUserId(fixedUserId);
+        testReviewResponseDTO.setTechnicianId(technicianId);
+        testReviewResponseDTO.setTechnicianFullName("Kieran White");
+        testReviewResponseDTO.setComment("Pengerjaannya sangat oke!");
+        testReviewResponseDTO.setRating(5);
+        testReviewResponseDTO.setCreatedAt(testCreatedAt);
     }
 
     @Test
     void testGetAllReviews() throws Exception {
-        List<Review> reviews = Arrays.asList(testReview);
-        Mockito.when(reviewService.getAllReviews()).thenReturn(reviews);
+        List<ReviewResponseDTO> reviews = Arrays.asList(testReviewResponseDTO);
+        Mockito.when(reviewService.getAllReviewResponses()).thenReturn(reviews);
 
         mockMvc.perform(get("/review"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(reviewId.toString()))
-                .andExpect(jsonPath("$[0].comment").value("Great service!"));
+                .andExpect(jsonPath("$[0].comment").value("Pengerjaannya sangat oke!"))
+                .andExpect(jsonPath("$[0].technicianFullName").value("Kieran White"));
     }
 
     @Test
     void testGetReviewsByTechnicianId() throws Exception {
-        List<Review> reviews = Arrays.asList(testReview);
-        Mockito.when(reviewService.getReviewsByTechnicianId(technicianId)).thenReturn(reviews);
+        List<ReviewResponseDTO> reviews = Arrays.asList(testReviewResponseDTO);
+        Mockito.when(reviewService.getReviewResponsesByTechnicianId(technicianId)).thenReturn(reviews);
 
         mockMvc.perform(get("/review/technician/" + technicianId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(reviewId.toString()));
+                .andExpect(jsonPath("$[0].id").value(reviewId.toString()))
+                .andExpect(jsonPath("$[0].technicianFullName").value("Kieran White"));
     }
 
     @Test
     @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = {"USER"})
     void testGetUserReviews() throws Exception {
-        List<Review> reviews = Arrays.asList(testReview);
-        Mockito.when(reviewService.getReviewsByUserId(fixedUserId)).thenReturn(reviews);
+        List<ReviewResponseDTO> reviews = Arrays.asList(testReviewResponseDTO);
+        Mockito.when(reviewService.getReviewResponsesByUserId(fixedUserId)).thenReturn(reviews);
 
         mockMvc.perform(get("/review/user").with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(reviewId.toString()));
+                .andExpect(jsonPath("$[0].id").value(reviewId.toString()))
+                .andExpect(jsonPath("$[0].technicianFullName").value("Kieran White"));
     }
 
     @Test
     void testGetReviewById() throws Exception {
-        Mockito.when(reviewService.getReviewById(reviewId)).thenReturn(testReview);
+        Mockito.when(reviewService.getReviewResponseById(reviewId)).thenReturn(testReviewResponseDTO);
 
         mockMvc.perform(get("/review/" + reviewId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(reviewId.toString()));
+                .andExpect(jsonPath("$.id").value(reviewId.toString()))
+                .andExpect(jsonPath("$.technicianFullName").value("Kieran White"));
     }
 
     @Test
     void testGetReviewByIdNotFound() throws Exception {
-        Mockito.when(reviewService.getReviewById(reviewId)).thenReturn(null);
+        Mockito.when(reviewService.getReviewResponseById(reviewId)).thenReturn(null);
 
         mockMvc.perform(get("/review/" + reviewId))
                 .andExpect(status().isNotFound());
@@ -149,7 +171,6 @@ public class ReviewControllerTest {
     @Test
     @WithMockUser(username = "00000000-0000-0000-0000-000000000002", roles = {"USER"})
     void testUpdateReviewForbidden() throws Exception {
-        // Different user trying to update
         Mockito.when(reviewService.getReviewById(reviewId)).thenReturn(testReview);
 
         mockMvc.perform(put("/review/" + reviewId)
@@ -157,7 +178,7 @@ public class ReviewControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testReviewDTO)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Hanya bisa merubah review yang Anda buat sendiri!"));
+                .andExpect(content().string("You can only update your own reviews"));
     }
 
     @Test
@@ -185,6 +206,17 @@ public class ReviewControllerTest {
 
         mockMvc.perform(delete("/review/" + reviewId).with(csrf()))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Review tidak ditemukan atau Anda tidak punya permission."));
+                .andExpect(content().string("Review not found or you don't have permission to delete it"));
+    }
+
+    @Test
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = {"USER"})
+    void testDeleteReviewError() throws Exception {
+        Mockito.when(reviewService.deleteReview(reviewId, fixedUserId))
+                .thenThrow(new RuntimeException("Deletion error"));
+
+        mockMvc.perform(delete("/review/" + reviewId).with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Deletion error"));
     }
 }
