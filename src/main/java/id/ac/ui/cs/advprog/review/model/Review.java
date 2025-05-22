@@ -1,6 +1,9 @@
 package id.ac.ui.cs.advprog.review.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.Id;
+import jakarta.persistence.Column;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -27,8 +30,8 @@ public class Review {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    // Default constructor untuk JPA
     protected Review() {
+        // Default constructor untuk JPA
     }
 
     private Review(Builder builder) {
@@ -66,6 +69,15 @@ public class Review {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static Builder builderFromExisting(Review existingReview) {
+        Builder builder = new Builder();
+        builder.id(existingReview.getId());
+        builder.userId(existingReview.getUserId());
+        builder.technicianId(existingReview.getTechnicianId());
+        builder.createdAt(existingReview.getCreatedAt());
+        return builder;
     }
 
     // Inner class Builder

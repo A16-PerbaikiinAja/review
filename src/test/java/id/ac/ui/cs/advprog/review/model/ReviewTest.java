@@ -5,6 +5,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Id;
 import jakarta.persistence.Column;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,12 +16,14 @@ public class ReviewTest {
     private UUID reviewId;
     private UUID userId;
     private UUID technicianId;
+    private LocalDateTime testCreatedAt;
 
     @BeforeEach
     void setUp() {
         reviewId = UUID.randomUUID();
         userId = UUID.randomUUID();
         technicianId = UUID.randomUUID();
+        testCreatedAt = LocalDateTime.now().minusDays(1);
     }
 
     @Test
@@ -43,7 +46,6 @@ public class ReviewTest {
         assertEquals(rating, review.getRating());
         assertNotNull(review.getCreatedAt());
 
-        // Verify JPA annotations
         assertTrue(Review.class.isAnnotationPresent(Entity.class));
         assertTrue(Review.class.isAnnotationPresent(Table.class));
 
@@ -54,6 +56,31 @@ public class ReviewTest {
         } catch (NoSuchFieldException e) {
             fail("id field not found or not properly annotated");
         }
+    }
+
+    @Test
+    void testBuilderFromExisting() {
+        Review originalReview = Review.builder()
+                .id(reviewId)
+                .userId(userId)
+                .technicianId(technicianId)
+                .comment("Original comment")
+                .rating(4)
+                .createdAt(testCreatedAt)
+                .build();
+
+        Review updatedReview = Review.builderFromExisting(originalReview)
+                .comment("Updated comment")
+                .rating(5)
+                .build();
+
+        assertEquals(reviewId, updatedReview.getId());
+        assertEquals(userId, updatedReview.getUserId());
+        assertEquals(technicianId, updatedReview.getTechnicianId());
+        assertEquals(testCreatedAt, updatedReview.getCreatedAt());
+
+        assertEquals("Updated comment", updatedReview.getComment());
+        assertEquals(5, updatedReview.getRating());
     }
 
     @Test
@@ -193,5 +220,21 @@ public class ReviewTest {
                 .build();
 
         assertNotNull(review.getCreatedAt());
+    }
+
+    @Test
+    void testManuallySetCreatedAt() {
+        LocalDateTime specificDate = LocalDateTime.of(2023, 1, 1, 0, 0);
+
+        Review review = Review.builder()
+                .id(reviewId)
+                .userId(userId)
+                .technicianId(technicianId)
+                .comment("Pengerjaannya sangat oke!")
+                .rating(5)
+                .createdAt(specificDate)
+                .build();
+
+        assertEquals(specificDate, review.getCreatedAt());
     }
 }
