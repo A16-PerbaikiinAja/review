@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.review.controller;
 
 import id.ac.ui.cs.advprog.review.dto.ReviewDTO;
+import id.ac.ui.cs.advprog.review.dto.ReviewResponseDTO;
 import id.ac.ui.cs.advprog.review.model.Review;
 import id.ac.ui.cs.advprog.review.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,28 +36,28 @@ public class ReviewController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Review>> getAllReviews() {
-        List<Review> reviews = reviewService.getAllReviews();
+    public ResponseEntity<List<ReviewResponseDTO>> getAllReviews() {
+        List<ReviewResponseDTO> reviews = reviewService.getAllReviewResponses();
         return ResponseEntity.ok(reviews);
     }
 
     @GetMapping("/technician/{technicianId}")
-    public ResponseEntity<List<Review>> getReviewsByTechnicianId(@PathVariable UUID technicianId) {
-        List<Review> reviews = reviewService.getReviewsByTechnicianId(technicianId);
+    public ResponseEntity<List<ReviewResponseDTO>> getReviewsByTechnicianId(@PathVariable UUID technicianId) {
+        List<ReviewResponseDTO> reviews = reviewService.getReviewResponsesByTechnicianId(technicianId);
         return ResponseEntity.ok(reviews);
     }
 
     @GetMapping("/user")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<Review>> getUserReviews(Authentication auth) {
+    public ResponseEntity<List<ReviewResponseDTO>> getUserReviews(Authentication auth) {
         UUID userId = extractUserId(auth);
-        List<Review> reviews = reviewService.getReviewsByUserId(userId);
+        List<ReviewResponseDTO> reviews = reviewService.getReviewResponsesByUserId(userId);
         return ResponseEntity.ok(reviews);
     }
 
     @GetMapping("/{reviewId}")
-    public ResponseEntity<Review> getReviewById(@PathVariable UUID reviewId) {
-        Review review = reviewService.getReviewById(reviewId);
+    public ResponseEntity<ReviewResponseDTO> getReviewById(@PathVariable UUID reviewId) {
+        ReviewResponseDTO review = reviewService.getReviewResponseById(reviewId);
         if (review == null) {
             return ResponseEntity.notFound().build();
         }
@@ -88,7 +89,7 @@ public class ReviewController {
         }
 
         if (!existingReview.getUserId().equals(userId)) {
-            return ResponseEntity.badRequest().body("Hanya bisa merubah review yang Anda buat sendiri!");
+            return ResponseEntity.badRequest().body("You can only update your own reviews");
         }
 
         Review updatedReview = reviewService.updateReview(reviewId, reviewDTO);
@@ -113,7 +114,7 @@ public class ReviewController {
             if (result) {
                 return ResponseEntity.ok().build();
             } else {
-                return ResponseEntity.badRequest().body("Review tidak ditemukan atau Anda tidak punya permission.");
+                return ResponseEntity.badRequest().body("Review not found or you don't have permission to delete it");
             }
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

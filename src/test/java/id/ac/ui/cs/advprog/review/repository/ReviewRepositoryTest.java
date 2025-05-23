@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,10 +55,11 @@ class ReviewRepositoryTest {
 
     @Test
     void testSaveAndUpdate() {
-        // Create a review
+        // Create a review with specific created date
         UUID reviewId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         UUID technicianId = UUID.randomUUID();
+        LocalDateTime createdAt = LocalDateTime.now().minusDays(1);
 
         Review review = Review.builder()
                 .id(reviewId)
@@ -65,22 +67,21 @@ class ReviewRepositoryTest {
                 .technicianId(technicianId)
                 .comment("Original comment")
                 .rating(4)
+                .createdAt(createdAt)
                 .build();
 
         // Save the review
         entityManager.persist(review);
         entityManager.flush();
 
-        // Update the review
-        Review updatedReview = Review.builder()
-                .id(reviewId)
-                .userId(userId)
-                .technicianId(technicianId)
+        // Update the review using builderFromExisting to preserve createdAt
+        Review originalReview = reviewRepository.findById(reviewId).get();
+        Review updatedReview = Review.builderFromExisting(originalReview)
                 .comment("Updated comment")
                 .rating(3)
                 .build();
 
-        Review result = reviewRepository.save(updatedReview);
+        reviewRepository.save(updatedReview);
         entityManager.flush();
 
         // Find the review again to check updates
@@ -90,6 +91,8 @@ class ReviewRepositoryTest {
         assertTrue(found.isPresent());
         assertEquals("Updated comment", found.get().getComment());
         assertEquals(3, found.get().getRating());
+        // Verify creation date is preserved
+        assertEquals(createdAt, found.get().getCreatedAt());
     }
 
     @Test
@@ -215,6 +218,72 @@ class ReviewRepositoryTest {
         assertEquals(2, userReviews.size());
         assertTrue(userReviews.stream().anyMatch(r -> r.getId().equals(review1.getId())));
         assertTrue(userReviews.stream().anyMatch(r -> r.getId().equals(review2.getId())));
+    }
+
+    @Test
+    void testFindAverageRatingByTechnicianId() {
+        UUID technicianId = UUID.randomUUID();
+
+        // Create reviews for the technician
+        Review review1 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(technicianId)
+                .comment("Rating 5")
+                .rating(5)
+                .build();
+
+        Review review2 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(technicianId)
+                .comment("Rating 3")
+                .rating(3)
+                .build();
+
+        // Save reviews
+        entityManager.persist(review1);
+        entityManager.persist(review2);
+        entityManager.flush();
+
+        // Get average rating
+        Double averageRating = reviewRepository.findAverageRatingByTechnicianId(technicianId);
+
+        // Assertions
+        assertEquals(4.0, averageRating, 0.001);
+    }
+
+    @Test
+    void testCountByTechnicianId() {
+        UUID technicianId = UUID.randomUUID();
+
+        // Create reviews for the technician
+        Review review1 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(technicianId)
+                .comment("Review 1")
+                .rating(5)
+                .build();
+
+        Review review2 = Review.builder()
+                .id(UUID.randomUUID())
+                .userId(UUID.randomUUID())
+                .technicianId(technicianId)
+                .comment("Review 2")
+                .rating(3)
+                .build();
+
+        // Save reviews
+        entityManager.persist(review1);
+        entityManager.persist(review2);
+        entityManager.flush();
+
+        // Count reviews
+        Integer count = reviewRepository.countByTechnicianId(technicianId);
+
+        // Assertions
+        assertEquals(2, count);
     }
 
     @Test
