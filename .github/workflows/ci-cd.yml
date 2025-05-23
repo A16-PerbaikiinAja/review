@@ -29,6 +29,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Set environment variables
+        run: |
+          echo "CORS_ALLOWED_ORIGIN=${{ secrets.CORS_ALLOWED_ORIGIN }}" >> $GITHUB_ENV
+
       - name: Run unit tests
         run: ./gradlew test
 
