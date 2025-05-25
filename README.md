@@ -11,6 +11,7 @@ Haliza Arfa | 2306211401
 2. Software Quality
 3. Software Architecture
 4. Software Deployment
+5. Profiling and Monitoring
 
 ---
 
@@ -92,3 +93,14 @@ Selain itu, pattern lainnya yang digunakan adalah sebagai berikut.
 
 Terdapat workflow CI/CD (Continuous Integration/Continuous Deployment) yang meliputi scorecard, build process, testing suite, dan automated deployment.
 Pipeline CI/CD diimplementasikan menggunakan GitHub Actions, deployment dilakukan ke AWS Academy.
+
+---
+
+### 5. Profiling and Monitoring
+
+#### Profiling dengan Intellij Profiler
+![profiling.png](profiling.png)
+
+
+#### Profiling-Monitoring dengan SpringBoot Actuator, Prometheus, Grafana
+![monitoring.png](monitoring.png)
