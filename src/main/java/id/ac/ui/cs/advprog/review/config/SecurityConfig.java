@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/review/**").permitAll()
                         .requestMatchers("/technician-ratings/**").permitAll()
                         .anyRequest().authenticated()

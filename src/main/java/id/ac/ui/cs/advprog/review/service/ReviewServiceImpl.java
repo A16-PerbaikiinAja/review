@@ -114,7 +114,9 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public ReviewResponseDTO getReviewResponseById(UUID id) {
         Review review = getReviewById(id);
-        if (review == null) return null;
+        if (review == null) {
+            return null;
+        }
 
         return createReviewResponseDTO(review);
     }

@@ -2,6 +2,7 @@ package id.ac.ui.cs.advprog.review.security;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -40,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     String role = jwtTokenProvider.getRoleFromJWT(token);
 
                     List<SimpleGrantedAuthority> authorities =
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase(Locale.ENGLISH)));
 
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(userId, null, authorities);
