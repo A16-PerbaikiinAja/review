@@ -52,7 +52,7 @@ public class TechnicianRatingControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testGetAllTechniciansWithRating() throws Exception {
         List<TechnicianRatingDTO> technicians = Arrays.asList(testTechnicianRatingDTO);
         Mockito.when(reviewService.getAllTechniciansWithRating()).thenReturn(technicians);
@@ -66,11 +66,12 @@ public class TechnicianRatingControllerTest {
     }
 
     @Test
-    @WithMockUser
-    void testGetTechnicianWithRating() throws Exception {
-        Mockito.when(reviewService.getTechnicianWithRating(technicianId)).thenReturn(testTechnicianRatingDTO);
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000002", roles = {"TECHNICIAN"})
+    void testGetThisTechnicianWithRating() throws Exception {
+        Mockito.when(reviewService.getTechnicianWithRating(UUID.fromString("00000000-0000-0000-0000-000000000002")))
+                .thenReturn(testTechnicianRatingDTO);
 
-        mockMvc.perform(get("/technician-ratings/" + technicianId))
+        mockMvc.perform(get("/technician-ratings/technician"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.technicianId").value(technicianId.toString()))
                 .andExpect(jsonPath("$.fullName").value("Jane Smith"))
@@ -83,27 +84,7 @@ public class TechnicianRatingControllerTest {
     void testGetTechnicianWithRatingNotFound() throws Exception {
         Mockito.when(reviewService.getTechnicianWithRating(technicianId)).thenReturn(null);
 
-        mockMvc.perform(get("/technician-ratings/" + technicianId))
+        mockMvc.perform(get("/technician-ratings/"))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @WithMockUser
-    void testGetAverageRatingByTechnicianId() throws Exception {
-        Mockito.when(reviewService.getAverageRatingByTechnicianId(technicianId)).thenReturn(4.5);
-
-        mockMvc.perform(get("/technician-ratings/average/" + technicianId))
-                .andExpect(status().isOk())
-                .andExpect(content().string("4.5"));
-    }
-
-    @Test
-    @WithMockUser
-    void testGetAverageRatingByTechnicianIdNoRating() throws Exception {
-        Mockito.when(reviewService.getAverageRatingByTechnicianId(technicianId)).thenReturn(0.0);
-
-        mockMvc.perform(get("/technician-ratings/average/" + technicianId))
-                .andExpect(status().isOk())
-                .andExpect(content().string("0.0"));
     }
 }

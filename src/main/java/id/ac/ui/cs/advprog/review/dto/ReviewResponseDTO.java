@@ -11,6 +11,7 @@ public class ReviewResponseDTO {
     private String comment;
     private int rating;
     private LocalDateTime createdAt;
+    private boolean isOwner;
 
     public UUID getId() {
         return id;
@@ -66,5 +67,13 @@ public class ReviewResponseDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isOwner() {
+        return isOwner;
+    }
+
+    public void setOwner(boolean owner) {
+        isOwner = owner;
     }
 }

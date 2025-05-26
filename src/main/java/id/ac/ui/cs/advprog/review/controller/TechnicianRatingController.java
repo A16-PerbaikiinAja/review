@@ -5,10 +5,13 @@ import id.ac.ui.cs.advprog.review.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
+
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,24 +27,39 @@ public class TechnicianRatingController {
         this.reviewService = reviewService;
     }
 
+    private UUID extractUserId(Authentication auth) {
+        Object principal = auth.getPrincipal();
+        if (principal instanceof String) {
+            return UUID.fromString((String) principal);
+        } else if (principal instanceof User) {
+            return UUID.fromString(((User) principal).getUsername());
+        } else {
+            throw new IllegalStateException("Unexpected principal type: " + principal.getClass());
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<TechnicianRatingDTO>> getAllTechniciansWithRating() {
         List<TechnicianRatingDTO> technicians = reviewService.getAllTechniciansWithRating();
         return ResponseEntity.ok(technicians);
     }
 
-    @GetMapping("/{technicianId}")
-    public ResponseEntity<TechnicianRatingDTO> getTechnicianWithRating(@PathVariable UUID technicianId) {
-        TechnicianRatingDTO technician = reviewService.getTechnicianWithRating(technicianId);
-        if (technician == null) {
+    @GetMapping("/technician")
+    @PreAuthorize("hasRole('TECHNICIAN')")
+    public ResponseEntity<TechnicianRatingDTO> getThisTechnicianWithRating(Authentication auth) {
+        UUID technicianId = null;
+        if (auth != null) {
+            try {
+                technicianId = extractUserId(auth);
+            } catch (Exception e) {
+                // Handle exception
+            }
+        }
+
+        TechnicianRatingDTO result = reviewService.getTechnicianWithRating(technicianId);
+        if (result == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(technician);
-    }
-
-    @GetMapping("/average/{technicianId}")
-    public ResponseEntity<Double> getAverageRatingByTechnicianId(@PathVariable UUID technicianId) {
-        Double averageRating = reviewService.getAverageRatingByTechnicianId(technicianId);
-        return ResponseEntity.ok(averageRating);
+        return ResponseEntity.ok(result);
     }
 }

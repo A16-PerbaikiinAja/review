@@ -92,7 +92,6 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review existingReview = existingReviewOpt.get();
 
-        // Check if the user is the owner of the review
         if (!existingReview.getUserId().equals(userId)) {
             return false;
         }
@@ -128,6 +127,19 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    public List<ReviewResponseDTO> getAllReviewResponses(UUID currentUserId) {
+        List<ReviewResponseDTO> reviews = getAllReviewResponses();
+
+        if (currentUserId != null) {
+            for (ReviewResponseDTO review : reviews) {
+                review.setOwner(currentUserId.equals(review.getUserId()));
+            }
+        }
+
+        return reviews;
+    }
+
+    @Override
     public List<ReviewResponseDTO> getReviewResponsesByTechnicianId(UUID technicianId) {
         List<Review> reviews = getReviewsByTechnicianId(technicianId);
         return reviews.stream().map(this::createReviewResponseDTO).collect(Collectors.toList());
@@ -157,7 +169,6 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Double getAverageRatingByTechnicianId(UUID technicianId) {
-        // Gunakan query method yang efisien
         Double averageRating = reviewRepository.findAverageRatingByTechnicianId(technicianId);
         return averageRating != null ? averageRating : 0.0;
     }

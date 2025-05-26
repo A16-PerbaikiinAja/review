@@ -88,7 +88,7 @@ class ReviewServiceResponseTest {
         when(technicianRepository.findById(technicianId)).thenReturn(Optional.of(testTechnician));
         when(testTechnician.getFullName()).thenReturn("Jane Smith");
 
-        List<ReviewResponseDTO> results = reviewService.getAllReviewResponses();
+        List<ReviewResponseDTO> results = reviewService.getAllReviewResponses(userId);
 
         assertEquals(1, results.size());
         assertEquals(reviewId, results.get(0).getId());

@@ -89,9 +89,10 @@ public class ReviewControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testGetAllReviews() throws Exception {
         List<ReviewResponseDTO> reviews = Arrays.asList(testReviewResponseDTO);
-        Mockito.when(reviewService.getAllReviewResponses()).thenReturn(reviews);
+        Mockito.when(reviewService.getAllReviewResponses(Mockito.any())).thenReturn(reviews);
 
         mockMvc.perform(get("/review"))
                 .andExpect(status().isOk())
@@ -101,18 +102,19 @@ public class ReviewControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000002", roles = {"TECHNICIAN"})
     void testGetReviewsByTechnicianId() throws Exception {
         List<ReviewResponseDTO> reviews = Arrays.asList(testReviewResponseDTO);
-        Mockito.when(reviewService.getReviewResponsesByTechnicianId(technicianId)).thenReturn(reviews);
+        Mockito.when(reviewService.getReviewResponsesByTechnicianId(Mockito.any())).thenReturn(reviews);
 
-        mockMvc.perform(get("/review/technician/" + technicianId))
+        mockMvc.perform(get("/review/technician"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(reviewId.toString()))
                 .andExpect(jsonPath("$[0].technicianFullName").value("Kieran White"));
     }
 
     @Test
-    @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = {"USER"})
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testGetUserReviews() throws Exception {
         List<ReviewResponseDTO> reviews = Arrays.asList(testReviewResponseDTO);
         Mockito.when(reviewService.getReviewResponsesByUserId(fixedUserId)).thenReturn(reviews);
@@ -124,6 +126,7 @@ public class ReviewControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testGetReviewById() throws Exception {
         Mockito.when(reviewService.getReviewResponseById(reviewId)).thenReturn(testReviewResponseDTO);
 
@@ -134,6 +137,7 @@ public class ReviewControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testGetReviewByIdNotFound() throws Exception {
         Mockito.when(reviewService.getReviewResponseById(reviewId)).thenReturn(null);
 
@@ -142,7 +146,7 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = {"USER"})
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testCreateReview() throws Exception {
         Mockito.when(reviewService.createReview(Mockito.any(ReviewDTO.class))).thenReturn(testReview);
 
@@ -155,7 +159,7 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = {"USER"})
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testUpdateReview() throws Exception {
         Mockito.when(reviewService.getReviewById(reviewId)).thenReturn(testReview);
         Mockito.when(reviewService.updateReview(Mockito.eq(reviewId), Mockito.any(ReviewDTO.class)))
@@ -169,7 +173,7 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "00000000-0000-0000-0000-000000000002", roles = {"USER"})
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000002")
     void testUpdateReviewForbidden() throws Exception {
         Mockito.when(reviewService.getReviewById(reviewId)).thenReturn(testReview);
 
@@ -182,7 +186,7 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = {"USER"})
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testDeleteReviewAsUser() throws Exception {
         Mockito.when(reviewService.deleteReview(reviewId, fixedUserId)).thenReturn(true);
 
@@ -200,7 +204,7 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = {"USER"})
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testDeleteReviewNotFound() throws Exception {
         Mockito.when(reviewService.deleteReview(reviewId, fixedUserId)).thenReturn(false);
 
@@ -210,7 +214,7 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = {"USER"})
+    @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void testDeleteReviewError() throws Exception {
         Mockito.when(reviewService.deleteReview(reviewId, fixedUserId))
                 .thenThrow(new RuntimeException("Deletion error"));
