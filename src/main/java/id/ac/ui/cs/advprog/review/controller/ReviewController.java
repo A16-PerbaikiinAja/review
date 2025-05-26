@@ -46,13 +46,33 @@ public class ReviewController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ReviewResponseDTO>> getAllReviews() {
-        List<ReviewResponseDTO> reviews = reviewService.getAllReviewResponses();
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<List<ReviewResponseDTO>> getAllReviews(Authentication auth) {
+        UUID currentUserId = null;
+        if (auth != null) {
+            try {
+                currentUserId = extractUserId(auth);
+            } catch (Exception e) {
+                // Handle exception
+            }
+        }
+
+        List<ReviewResponseDTO> reviews = reviewService.getAllReviewResponses(currentUserId);
         return ResponseEntity.ok(reviews);
     }
 
-    @GetMapping("/technician/{technicianId}")
-    public ResponseEntity<List<ReviewResponseDTO>> getReviewsByTechnicianId(@PathVariable UUID technicianId) {
+    @GetMapping("/technician")
+    @PreAuthorize("hasRole('TECHNICIAN')")
+    public ResponseEntity<List<ReviewResponseDTO>> getReviewsByTechnicianId(Authentication auth) {
+        UUID technicianId = null;
+        if (auth != null) {
+            try {
+                technicianId = extractUserId(auth);
+            } catch (Exception e) {
+                // Handle exception
+            }
+        }
+
         List<ReviewResponseDTO> reviews = reviewService.getReviewResponsesByTechnicianId(technicianId);
         return ResponseEntity.ok(reviews);
     }
@@ -66,6 +86,7 @@ public class ReviewController {
     }
 
     @GetMapping("/{reviewId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ReviewResponseDTO> getReviewById(@PathVariable UUID reviewId) {
         ReviewResponseDTO review = reviewService.getReviewResponseById(reviewId);
         if (review == null) {

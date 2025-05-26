@@ -22,6 +22,7 @@ public interface ReviewService {
     // ReviewResponseDTO Methods
     ReviewResponseDTO getReviewResponseById(UUID id);
     List<ReviewResponseDTO> getAllReviewResponses();
+    List<ReviewResponseDTO> getAllReviewResponses(UUID id);
     List<ReviewResponseDTO> getReviewResponsesByTechnicianId(UUID technicianId);
     List<ReviewResponseDTO> getReviewResponsesByUserId(UUID userId);
 
