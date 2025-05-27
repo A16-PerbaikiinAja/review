@@ -11,7 +11,6 @@ Haliza Arfa | 2306211401
 2. Software Quality
 3. Software Architecture
 4. Software Deployment
-5. Profiling and Monitoring
 
 ---
 
@@ -21,6 +20,8 @@ Sudah dibangun struktur untuk sistem Review, yang meliputi pengembangan model, c
 Sistem sudah terintegrasi dengan Authentication untuk mekanisme otorisasi JWT Token, dan menerapkan role-based access pada endpoint dengan memanfaatkan Spring Security dan anotasi @PreAuthorize.
 Fungsionalitas review memungkinkan user memberikan penilaian dan komentar untuk teknisi, serta kemampuan untuk mengedit atau menghapus review yang telah mereka buat. Admin diberikan hak khusus untuk menghapus review yang dianggap tidak sesuai.
 Dari perspektif high-level networking, sistem telah mengimplementasikan komunikasi antar layanan melalui REST API dengan mekanisme autentikasi JWT untuk keamanan.
+Telah dilakukan profiling dan monitoring untuk memantau performa sistem serta mengidentifikasi bottleneck. Koneksi ke frontend sudah berhasil dilakukan.
+Endpoint-endpoint RESTful yang telah dikembangkan untuk manajemen review dan rating teknisi sudah terhubung dengan UI pengguna secara secara asynchronous menggunakan fetch API dengan async/await.
 
 ---
 
@@ -49,6 +50,11 @@ Pattern ini dipilih karena model Review memiliki banyak parameter pada construct
 Selain itu, pattern lainnya yang digunakan adalah sebagai berikut.
 - **DTO (Data Transfer Object)**: Penerapan ReviewDTO untuk menyediakan representasi data yang sesuai dengan kebutuhan komunikasi client-server.
 - **Repository Pattern**: Implementasi ReviewRepository untuk abstraksi akses data, mempermudah pengelolaan dan pengujian kode.
+
+**Asynchronous Programming**
+
+Di sisi frontend, asynchronous programming diterapkan menggunakan fetch() API dengan async/await untuk melakukan pengambilan data secara non-blocking dari backend. 
+Dengan ini, UI tetap responsif meskipun ada proses pengambilan data yang membutuhkan waktu. Pada backend, sistem juga didesain untuk mendukung komunikasi asynchronous dengan mekanisme RESTful API.
 
 ---
 
@@ -91,12 +97,12 @@ Selain itu, pattern lainnya yang digunakan adalah sebagai berikut.
 
 ## 4. **Software Deployment**
 
+### Workflow CI-CD
+
 Terdapat workflow CI/CD (Continuous Integration/Continuous Deployment) yang meliputi scorecard, build process, testing suite, dan automated deployment.
 Pipeline CI/CD diimplementasikan menggunakan GitHub Actions, deployment dilakukan ke AWS Academy.
 
----
-
-## 5. Profiling and Monitoring
+### Profiling dan Monitoring
 
 #### Profiling dengan Intellij Profiler
 ![profiling.png](profiling.png)
@@ -104,6 +110,8 @@ Pipeline CI/CD diimplementasikan menggunakan GitHub Actions, deployment dilakuka
 
 #### Profiling-Monitoring dengan SpringBoot Actuator, Prometheus, Grafana
 ![monitoring.png](monitoring.png)
+
+---
 
 ---
 
