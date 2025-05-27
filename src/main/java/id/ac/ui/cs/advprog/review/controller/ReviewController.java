@@ -6,6 +6,7 @@ import id.ac.ui.cs.advprog.review.model.Review;
 import id.ac.ui.cs.advprog.review.service.ReviewService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.server.ResponseStatusException;
 
 
 import java.util.List;
@@ -53,7 +55,7 @@ public class ReviewController {
             try {
                 currentUserId = extractUserId(auth);
             } catch (Exception e) {
-                // Handle exception
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to extract user ID", e);
             }
         }
 
@@ -69,7 +71,7 @@ public class ReviewController {
             try {
                 technicianId = extractUserId(auth);
             } catch (Exception e) {
-                // Handle exception
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to extract technician ID", e);
             }
         }
 
